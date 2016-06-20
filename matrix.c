@@ -181,6 +181,7 @@ void show_char();
 void clear_screen(void);
 void copy_to_buffer(const uint8_t sprite[8]);
 void scroll_animation(const uint8_t sprite_1[], const uint8_t sprite_2[]);
+void pulse_animation(const uint8_t sprite_1[8], const uint8_t sprite_2[8]);
 
 /*
  * ISR TIMER0_OVF_vect
@@ -375,11 +376,13 @@ void scroll_animation(const uint8_t sprite_1[8], const uint8_t sprite_2[8]) {
     uint8_t i;
     int8_t x;
     for (i = 0; i < REPEAT_ANIMATION; i++) {
-        copy_to_buffer(sprite_1);
+        
+        copy_to_buffer(sprite_1);   // push on right
         for (x = -8; x <= 0; x++) {
             copy_to_display(x, 0, buffer);
             _delay_ms(ANIMATION_SCROLL_SPEED);
         }
+        
         _delay_ms(200);
         copy_to_buffer(sprite_2);
         copy_to_display(0, 0, buffer);
@@ -391,18 +394,32 @@ void scroll_animation(const uint8_t sprite_1[8], const uint8_t sprite_2[8]) {
         copy_to_display(0, 0, buffer);
         _delay_ms(200);
         copy_to_buffer(sprite_1);
-        for (x = 0; x < 8; x++) {
+        
+        for (x = 0; x < 8; x++) {   // push off right
             copy_to_display(x, 0, buffer);
             _delay_ms(ANIMATION_SCROLL_SPEED);
         }
     }
 }
 
+/*
+ * pulse_animation
+ * Uses sprite_1 and sprite_2 to pulse an animation
+ */
+void pulse_animation(const uint8_t sprite_1[8], const uint8_t sprite_2[8]) {
+    uint8_t i;
+    for (i = 0; i < REPEAT_ANIMATION; i++) {
+        copy_to_buffer(sprite_1);
+        copy_to_display(0, 0, buffer);
+        _delay_ms(750);
+        copy_to_buffer(sprite_2);
+        copy_to_display(0, 0, buffer);
+        _delay_ms(180);
+    }
+}
 
 
 int main(void) {
-    
-    uint8_t i = 0;
     uint8_t mode = 0;
     
     TCCR0B |= (1 << CS01);  // T0 setup, prescale 8
@@ -424,13 +441,13 @@ int main(void) {
     PORTD |= (1 << PD6);
     
     // say hello, toggle row 1 (pixel 0,0)
-    PORTB |= (1 << PB0);    // col 1 on
-    for (i = 0; i < 5; i++) {
-        PORTA &= ~(1 << PA0);
-        _delay_ms(50);
-        PORTA |= (1 << PA0);
-        _delay_ms(50);
-    }
+//    PORTB |= (1 << PB0);    // col 1 on
+//    for (i = 0; i < 5; i++) {
+//        PORTA &= ~(1 << PA0);
+//        _delay_ms(50);
+//        PORTA |= (1 << PA0);
+//        _delay_ms(50);
+//    }
     
     // read last mode from eeprom
     // 0 mean cycle through all modes and messages
@@ -449,24 +466,10 @@ int main(void) {
                 scroll_animation(sprite_00, sprite_01);
                 break;
             case 2: // Heart
-                for (i = 0; i < REPEAT_ANIMATION; i++) {
-                    copy_to_buffer(sprite_03);
-                    copy_to_display(0, 0, buffer);
-                    _delay_ms(750);
-                    copy_to_buffer(sprite_02);
-                    copy_to_display(0, 0, buffer);
-                    _delay_ms(180);
-                }
+                pulse_animation(sprite_03, sprite_02);
                 break;
             case 3: // Wink
-                for (i = 0; i < REPEAT_ANIMATION; i++) {
-                    copy_to_buffer(sprite_04);
-                    copy_to_display(0, 0, buffer);
-                    _delay_ms(750);
-                    copy_to_buffer(sprite_05);
-                    copy_to_display(0, 0, buffer);
-                    _delay_ms(180);
-                }
+                pulse_animation(sprite_04, sprite_05);
                 break;
             case 4: // Alien 2
                 scroll_animation(sprite_06, sprite_07);
