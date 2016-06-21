@@ -1,9 +1,9 @@
 /* -----------------------------------------------------------------------
- * Title:    8x8 LED dot matrix animations
+ * Title:    64pixels - 8x8 LED dot matrix animations
  * Author:   Alexander Weber alex@tinkerlog.com
  * Date:     21.12.2008
  * Hardware: ATtiny2313
- * Software: AVRMacPack
+ * Software: AVR for Mac
  *
  * Edited: 06.18.2016 Ian McLinden
  */
@@ -18,13 +18,18 @@
 #include <avr/pgmspace.h>
 #include "font.h"
 
+// ---- Constants --------------------------------------------------------------------------------------------------- //
+
 // Change these values to adjust scroll speeds and animation iterations
 #define ANIMATION_SCROLL_SPEED 80  // how fast to scroll the animations
+#define ANIMATION_FRAME_SPEED 250  // how fast to play each frame of an animation
 #define TEXT_SCROLL_SPEED 120      // how fast to scrill the text
-#define REPEAT_ANIMATION 5        // how often to repeat the animation if in cycling mode
+#define REPEAT_ANIMATION 5         // how often to repeat the animation if in cycling mode
 #define REPEAT_TEXT 1              // how often to repeat the text if in cycling mode
 
 #define CYCLE 0                    // 1 YES
+
+// ---- Messages ---------------------------------------------------------------------------------------------------- //
 
 // How to add a new message:
 // * add the new message (only upper case, see font.h)
@@ -47,7 +52,7 @@ const char message_11[] PROGMEM = "   HTTPS://GITHUB.COM/IANMCLINDEN ";
 
 #define MAX_MESSAGES 12
 PGM_P const messages[] PROGMEM = {
-    message_00
+     message_00
     ,message_01
     ,message_02
     ,message_03
@@ -61,105 +66,118 @@ PGM_P const messages[] PROGMEM = {
     ,message_11
 };
 
+// ---- Animations -------------------------------------------------------------------------------------------------- //
+
 #define MAX_ANIMATIONS 4
-const uint8_t sprite_00[8] PROGMEM =
-{
-    0x18,    // ___XX___
-    0x3C,    // __XXXX__
-    0x7E,    // _XXXXXX_
-    0xDB,    // X_XXXX_X
-    0xFF,    // XXXXXXXX
-    0x24,    // __X__X__
-    0x5A,    // _X_XX_X_
-    0xA5     // X_X__X_X
+const uint8_t sprite_alien_1[][8] PROGMEM = {
+	{
+		0x18,    // ___XX___
+		0x3C,    // __XXXX__
+		0x7E,    // _XXXXXX_
+		0xDB,    // X_XXXX_X
+		0xFF,    // XXXXXXXX
+		0x24,    // __X__X__
+		0x5A,    // _X_XX_X_
+		0xA5     // X_X__X_X
+	},
+	{
+		0x18,    // ___XX___
+		0x3C,    // __XXXX__
+		0x7E,    // _XXXXXX_
+		0xDB,    // X_XXXX_X
+		0xFF,    // XXXXXXXX
+		0x24,    // __X__X__
+		0x42,    // _X____X_
+		0x24     // __X__X__
+	}
 };
 
-const uint8_t sprite_01[8] PROGMEM =
-{
-    0x18,    // ___XX___
-    0x3C,    // __XXXX__
-    0x7E,    // _XXXXXX_
-    0xDB,    // X_XXXX_X
-    0xFF,    // XXXXXXXX
-    0x24,    // __X__X__
-    0x42,    // _X____X_
-    0x24     // __X__X__
+const uint8_t sprite_heart[][8] PROGMEM = {
+	{
+		0x00,    // ________
+		0x66,    // _XX__XX_
+		0xFF,    // XXXXXXXX
+		0xFF,    // XXXXXXXX
+		0xFF,    // XXXXXXXX
+		0x7E,    // _XXXXXX_
+		0x3C,    // __XXXX__
+		0x18     // ___XX___
+	},
+	{
+		0x00,    // ________
+		0x00,    // ________
+		0x14,    // ___X_X__
+		0x3E,    // __XXXXX_
+		0x3E,    // __XXXXX_
+		0x1C,    // ___XXX__
+		0x08,    // ____X___
+		0x00     // ________
+	}
 };
 
-const uint8_t sprite_02[8] PROGMEM =
+const uint8_t sprite_wink[][8] PROGMEM =
 {
-    0x00,    // ________
-    0x00,    // ________
-    0x14,    // ___X_X__
-    0x3E,    // __XXXXX_
-    0x3E,    // __XXXXX_
-    0x1C,    // ___XXX__
-    0x08,    // ____X___
-    0x00     // ________
+	{
+		0x3c,    // __XXXX__
+		0x42,    // _X____X_
+		0xA5,    // X_X__X_X
+		0x81,    // X______X
+		0xA5,    // X_X__X_X
+		0x99,    // X__XX__X
+		0x42,    // _X____X_
+		0x3c     // __XXXX__
+	},
+	{
+		0x3c,    // __XXXX__
+		0x42,    // _X____X_
+		0xA1,    // X_X____X
+		0x81,    // X______X
+		0xA5,    // X_X__X_X
+		0x99,    // X__XX__X
+		0x42,    // _X____X_
+		0x3c     // __XXXX__
+	}
+
 };
 
-const uint8_t sprite_03[8] PROGMEM =
+const uint8_t sprite_alien_2[][8] PROGMEM =
 {
-    0x00,    // ________
-    0x66,    // _XX__XX_
-    0xFF,    // XXXXXXXX
-    0xFF,    // XXXXXXXX
-    0xFF,    // XXXXXXXX
-    0x7E,    // _XXXXXX_
-    0x3C,    // __XXXX__
-    0x18     // ___XX___
+	{
+		0x24,    // __X__X__
+		0x7E,    // _XXXXXX_
+		0xDB,    // XX_XX_XX
+		0xFF,    // XXXXXXXX
+		0xA5,    // X_X__X_X
+		0x99,    // X__XX__X
+		0x81,    // X______X
+		0xC3     // XX____XX
+	},
+	{
+		0x24,    // __X__X__
+		0x18,    // ___XX___
+		0x7E,    // X_XXXX_X
+		0xDB,    // XX_XX_XX
+		0xFF,    // XXXXXXXX
+		0xDB,    // X_XXXX_X
+		0x99,    // X__XX__X
+		0xC3     // XX____XX
+	}
+
 };
 
+// ---- Function Protos --------------------------------------------------------------------------------------------- //
 
-const uint8_t sprite_04[8] PROGMEM =
-{
-    0x3c,    // __XXXX__
-    0x42,    // _X____X_
-    0xA5,    // X_X__X_X
-    0x81,    // X______X
-    0xA5,    // X_X__X_X
-    0x99,    // X__XX__X
-    0x42,    // _X____X_
-    0x3c     // __XXXX__
-};
+void delay_ms(uint16_t delay);
+void copy_to_display(int8_t x, int8_t y, uint8_t sprite[]);
+void display_active_row(void);
+void show_char();
+void clear_screen(void);
+void copy_to_buffer(const uint8_t sprite[8]);
+void scroll_animation(const uint8_t sprite_1[8], const uint8_t sprite_2[8]);
+void pulse_animation(const uint8_t sprite_1[8], const uint8_t sprite_2[8]);
+void play_animation(const uint8_t sprite[][8]);
 
-const uint8_t sprite_05[8] PROGMEM =
-{
-    0x3c,    // __XXXX__
-    0x42,    // _X____X_
-    0xA1,    // X_X____X
-    0x81,    // X______X
-    0xA5,    // X_X__X_X
-    0x99,    // X__XX__X
-    0x42,    // _X____X_
-    0x3c     // __XXXX__
-};
-
-const uint8_t sprite_06[8] PROGMEM =
-{
-    0x24,    // __X__X__
-    0x7E,    // _XXXXXX_
-    0xDB,    // XX_XX_XX
-    0xFF,    // XXXXXXXX
-    0xA5,    // X_X__X_X
-    0x99,    // X__XX__X
-    0x81,    // X______X
-    0xC3     // XX____XX
-};
-
-const uint8_t sprite_07[8] PROGMEM =
-{
-    0x24,    // __X__X__
-    0x18,    // ___XX___
-    0x7E,    // X_XXXX_X
-    0xDB,    // XX_XX_XX
-    0xFF,    // XXXXXXXX
-    0xDB,    // X_XXXX_X
-    0x99,    // X__XX__X
-    0xC3     // XX____XX
-};
-
-
+// ---- Globals ----------------------------------------------------------------------------------------------------- //
 
 uint8_t mode_ee EEMEM = 0;                      // stores the mode in eeprom
 static uint8_t screen_mem[8];                   // screen memory
@@ -171,44 +189,16 @@ static uint8_t active_char = 0;                 // stores the active char
 static uint8_t message_length = 0;              // stores the length of the active message
 static uint8_t char_ptr = 0;                    // points to the active col in the char
 static uint8_t char_length = 0;                 // stores the length of the active char
-static volatile uint16_t counter = 0;           // used for delay function
-
-// prototypes
-void delay_ms(uint16_t delay);
-void copy_to_display(int8_t x, int8_t y, uint8_t sprite[]);
-void display_active_row(void);
-void show_char();
-void clear_screen(void);
-void copy_to_buffer(const uint8_t sprite[8]);
-void scroll_animation(const uint8_t sprite_1[], const uint8_t sprite_2[]);
-void pulse_animation(const uint8_t sprite_1[8], const uint8_t sprite_2[8]);
-
-/*
- * ISR TIMER0_OVF_vect
- * Handles overflow interrupts of timer 0.
- *
- * 4MHz
- * ----
- * Prescaler 8 ==> 1953.1 Hz
- * Complete display = 244 Hz
- *
- */
-ISR(TIMER0_OVF_vect) {
-    display_active_row();
-    counter++;
-}
-
 
 /*
  * copy_to_display
  * Copies sprite data to the screen memory at the given position.
  */
-                  // 0 < 8,    0
 void copy_to_display(int8_t x, int8_t y, uint8_t sprite[8]) {
     int8_t i, t;
     uint8_t row;
-    for (i = 0; i < 8; i++) {   // 0
-        t = i-y;    // 0
+    for (i = 0; i < 8; i++) {
+        t = i-y;
         row = ((t >= 0) && (t < 8)) ? sprite[t] : 0x00;
         row = (x >= 0) ? (row >> x) : (row << -x);
         screen_mem[i] = row;
@@ -216,10 +206,8 @@ void copy_to_display(int8_t x, int8_t y, uint8_t sprite[8]) {
 }
 
 
-
 /*
- * display_active_col
- * Deactivates the active column and displays the next one.
+ * Deactivates the active row and displays the next one.
  * Data is read from screen_mem.
  *
  * HSN-1088AS common anode         |
@@ -233,53 +221,47 @@ void copy_to_display(int8_t x, int8_t y, uint8_t sprite[8]) {
  * PB2 o o o o o o o o             |
  * PB7 o o o o o o o o
  *
+ * Prescaler 8 ==> 1953.1 Hz
+ * Complete display = 244 Hz
  */
-void display_active_row(void) {
-    
+
+ISR(TIMER0_OVF_vect) {
     uint8_t row;
-    
+
     // shut down all rows and columns
     PORTA = (1 << PA0) | (0 << PA1);
     PORTB = (0 << PB0) | (0 << PB1) | (1 << PB2) | (0 << PB3) |
             (1 << PB4) | (0 << PB5) | (0 << PB6) | (1 << PB7);
     PORTD = (1 << PD0) | (1 << PD1) | (0 << PD2) | (0 << PD3) |
             (1 << PD4) | (1 << PD5) | (0 << PD6);
-    
+
     // next row
     active_row = (active_row+1) % 8;
     row = screen_mem[active_row];
     
     // output all columns, switch leds on.
-    // column 1
-    if ((row & 0x80) == 0x80) {
+    if ((row & 0x80) == 0x80) { // Col 1
         PORTB |= (1 << PB0);
     }
-    // column 2
-    if ((row & 0x40) == 0x40) {
+    if ((row & 0x40) == 0x40) { // Col 2
         PORTB |= (1 << PB1);
     }
-    // column 3
-    if ((row & 0x20) == 0x20) {
+    if ((row & 0x20) == 0x20) { // Col 3
         PORTB |= (1 << PB5);
     }
-    // column 4
-    if ((row & 0x10) == 0x10) {
+    if ((row & 0x10) == 0x10) { // Col 4
         PORTA |= (1 << PA1);
     }
-    // column 5
-    if ((row & 0x08) == 0x08) {
+    if ((row & 0x08) == 0x08) { // Col 5
         PORTB |= (1 << PB6);
     }
-    // column 6
-    if ((row & 0x04) == 0x04) {
+    if ((row & 0x04) == 0x04) { // Col 6
         PORTD |= (1 << PD2);
     }
-    // column 7
-    if ((row & 0x02) == 0x02) {
+    if ((row & 0x02) == 0x02) { // Col 7
         PORTD |= (1 << PD3);
     }
-    // column 8
-    if ((row & 0x01) == 0x01) {
+    if ((row & 0x01) == 0x01) { // Col 8
         PORTB |= (1 << PB3);
     }
     
@@ -287,28 +269,29 @@ void display_active_row(void) {
     switch (active_row) {
         case 0:
             PORTA &= ~(1 << PA0);
-            break;
+			break;
         case 1:
             PORTD &= ~(1 << PD4);
-            break;
+			break;
         case 2:
             PORTD &= ~(1 << PD1);
-            break;
+			break;
         case 3:
             PORTD &= ~(1 << PD5);
-            break;
+			break;
         case 4:
             PORTB &= ~(1 << PB4);
-            break;
+			break;
         case 5:
             PORTD &= ~(1 << PD0);
-            break;
+			break;
         case 6:
             PORTB &= ~(1 << PB2);
-            break;
+			break;
         case 7:
+        default:
             PORTB &= ~(1 << PB7);
-            break;
+			break;
     }
 }
 
@@ -322,7 +305,7 @@ void show_char() {
     uint8_t i;
     uint8_t b;
     
-    // blit the screen to the left
+    // move the screen to the left
     for (i = 0; i < 8; i++) {
         screen_mem[i] <<= 1;
     }
@@ -357,9 +340,7 @@ void clear_screen(void) {
 }
 
 
-
 /*
- * copy_to_buffer
  * Copies the given sprite from PROGMEM to RAM.
  */
 void copy_to_buffer(const uint8_t sprite[8]) {
@@ -418,6 +399,23 @@ void pulse_animation(const uint8_t sprite_1[8], const uint8_t sprite_2[8]) {
     }
 }
 
+/*
+ * play_animation
+ * Uses animation array to play an animation
+ */
+void play_animation(const uint8_t sprite[][8]) {
+	uint8_t i;
+	uint8_t j;
+	uint8_t frames = sizeof(sprite) / sizeof(sprite[0]);
+
+	for (i = 0; i < REPEAT_ANIMATION; i++) {
+		for (j = 0; j < frames; j++) {
+			copy_to_buffer(sprite[j]);
+			copy_to_display(0, 0, buffer);
+			_delay_ms(ANIMATION_FRAME_SPEED);
+		}
+	}
+}
 
 int main(void) {
     uint8_t mode = 0;
@@ -463,16 +461,16 @@ int main(void) {
         
         switch (mode) {
             case 1: // Alien 1
-                scroll_animation(sprite_00, sprite_01);
+                scroll_animation(sprite_alien_1[0], sprite_alien_1[1]);
                 break;
             case 2: // Heart
-                pulse_animation(sprite_03, sprite_02);
+                pulse_animation(sprite_heart[0], sprite_heart[1]);
                 break;
             case 3: // Wink
-                pulse_animation(sprite_04, sprite_05);
+                pulse_animation(sprite_wink[0], sprite_wink[1]);
                 break;
             case 4: // Alien 2
-                scroll_animation(sprite_06, sprite_07);
+                scroll_animation(sprite_alien_2[0], sprite_alien_2[1]);
                 break;
             default: // Messages
                 strcpy_P((char *)buffer, (char *)pgm_read_word(&(messages[mode - (MAX_ANIMATIONS+1)])));
